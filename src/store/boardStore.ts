@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Card } from '../types'
+import type { Card } from '../types'
 
 interface BoardStore {
   activeCard: Card | null
@@ -21,7 +21,7 @@ export const useBoardStore = create<BoardStore>((set) => ({
   searchQuery: '',
 
   setActiveCard: (card) => set({ activeCard: card }),
-  openCardModal: (card = null) => set({ activeCard: card, isCardModalOpen: true }),
+  openCardModal: (card) => set({ activeCard: card, isCardModalOpen: true }),
   closeCardModal: () => set({ activeCard: null, isCardModalOpen: false }),
   toggleColumnForm: () => set((state) => ({ isColumnFormOpen: !state.isColumnFormOpen })),
   setSearchQuery: (query) => set({ searchQuery: query }),
