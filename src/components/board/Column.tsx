@@ -1,18 +1,21 @@
 import { useState } from 'react'
-import type { Column as ColumnType } from '../../types'
+import type { Column as ColumnType, Card as CardType } from '../../types'
 import { useColumns } from '../../hooks/useColumns'
 import { Pencil, Trash, Plus } from 'lucide-react'
 import Modal from '../ui/Modal'
-
+import CardForm from '../forms/CardForm'
+import { useCards } from '../../hooks/useCards'
+import Card from './Card'
 interface Props {
   column: ColumnType
-  cardCount: number
 }
 
-export default function Column({ column, cardCount }: Props) {
+export default function Column({ column }: Props) {
   const [isEditing, setIsEditing] = useState(false)
   const [title, setTitle] = useState(column.title)
+  const [activeCard, setActiveCard] = useState<CardType | null | 'new'>(null)
   const { updateColumn, deleteColumn } = useColumns()
+  const { cards, deleteCard } = useCards(column.id)
 
   const handleSave = async () => {
     if (!title.trim() || title === column.title) {
@@ -29,6 +32,9 @@ export default function Column({ column, cardCount }: Props) {
     await deleteColumn.mutateAsync(column.id)
   }
 
+  const handleDeleteCard = async (cardId: string) => {
+    await deleteCard.mutateAsync(cardId)
+  }
   return (
     <div className="flex flex-col bg-gray-50 rounded-lg p-4 min-w-80 max-w-80">
       {isEditing && (
@@ -67,7 +73,7 @@ export default function Column({ column, cardCount }: Props) {
           <h2 className="font-semibold">
             {column.title}
             <span className="px-2 py-0.5 bg-gray-200 text-gray-700 rounded-full text-sm">
-              {cardCount}
+              {cards.length}
             </span>
           </h2>
         </div>
@@ -91,12 +97,37 @@ export default function Column({ column, cardCount }: Props) {
         </div>
       </div>
 
-      <button className="mb-3 p-2 bg-white border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+      <button
+        className="mb-3 p-2 bg-white border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+        onClick={() => setActiveCard('new')}
+      >
         <Plus className="w-4 h-4" />
         <span>Add Task</span>
       </button>
 
-      <div className="flex-1 flex flex-col gap-3 min-h-32 p-2 rounded-lg transition-colors border-2 border-transparent"></div>
+      {activeCard !== null && (
+        <Modal
+          title={activeCard === 'new' ? 'New Task' : 'Edit Task'}
+          onClose={() => setActiveCard(null)}
+        >
+          <CardForm
+            columnId={column.id}
+            card={activeCard === 'new' ? undefined : activeCard}
+            onClose={() => setActiveCard(null)}
+          />
+        </Modal>
+      )}
+
+      <div className="flex-1 flex flex-col gap-3 min-h-32 p-2 rounded-lg transition-colors border-2 border-transparent">
+        {cards.map((card) => (
+          <Card
+            key={card.id}
+            card={card}
+            onEdit={() => setActiveCard(card)}
+            onDelete={() => handleDeleteCard(card.id)}
+          />
+        ))}
+      </div>
     </div>
   )
 }

@@ -19,6 +19,6 @@ export interface Card {
 }
 
 export type CreateCardDto = Omit<Card, 'id' | 'created_at'>
-export type UpdateCardDto = Partial<Omit<Card, 'id' | 'created_at'>>
+export type UpdateCardDto = { id: string } & Partial<Omit<Card, 'id' | 'created_at'>>
 
 export type CreateColumnDto = Omit<Column, 'id' | 'created_at'>

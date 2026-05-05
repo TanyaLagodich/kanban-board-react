@@ -51,7 +51,7 @@ export default function Board() {
 
         <div className="flex gap-6 h-full">
           {columns.map((column) => (
-            <Column key={column.id} column={column} cardCount={0} />
+            <Column key={column.id} column={column} />
           ))}
         </div>
       </div>
