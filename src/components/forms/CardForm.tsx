@@ -36,7 +36,7 @@ export default function CardForm({
     e.currentTarget.value = ''
   }
 
-  const handleSubmit = async (e: React.SubmitEvent) => {
+  const handleSubmit = async (e: SubmitEvent) => {
     e.preventDefault()
 
     if (!title.trim()) return
