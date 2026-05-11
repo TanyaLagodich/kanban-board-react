@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useDroppable } from '@dnd-kit/react'
+import { CollisionPriority } from '@dnd-kit/abstract'
 import type { Column as ColumnType, Card as CardType } from '../../types'
 import { useColumns } from '../../hooks/useColumns'
 import { Pencil, Trash, Plus } from 'lucide-react'
@@ -16,6 +18,13 @@ export default function Column({ column }: Props) {
   const [activeCard, setActiveCard] = useState<CardType | null | 'new'>(null)
   const { updateColumn, deleteColumn } = useColumns()
   const { cards, deleteCard } = useCards(column.id)
+
+  const { ref } = useDroppable({
+    id: column.id,
+    type: 'column',
+    accept: ['item'],
+    collisionPriority: CollisionPriority.Low,
+  })
 
   const handleSave = async () => {
     if (!title.trim() || title === column.title) {
@@ -36,7 +45,7 @@ export default function Column({ column }: Props) {
     await deleteCard.mutateAsync(cardId)
   }
   return (
-    <div className="flex flex-col bg-gray-50 rounded-lg p-4 min-w-80 max-w-80">
+    <div ref={ref} className="flex flex-col bg-gray-50 rounded-lg p-4 min-w-80 max-w-80">
       {isEditing && (
         <Modal title="Edit Column" onClose={() => setIsEditing(false)}>
           <div className="mb-6">
@@ -67,7 +76,6 @@ export default function Column({ column }: Props) {
           </div>
         </Modal>
       )}
-
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold">
@@ -96,7 +104,6 @@ export default function Column({ column }: Props) {
           </button>
         </div>
       </div>
-
       <button
         className="mb-3 p-2 bg-white border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
         onClick={() => setActiveCard('new')}
@@ -104,7 +111,6 @@ export default function Column({ column }: Props) {
         <Plus className="w-4 h-4" />
         <span>Add Task</span>
       </button>
-
       {activeCard !== null && (
         <Modal
           title={activeCard === 'new' ? 'New Task' : 'Edit Task'}
@@ -117,11 +123,11 @@ export default function Column({ column }: Props) {
           />
         </Modal>
       )}
-
       <div className="flex-1 flex flex-col gap-3 min-h-32 p-2 rounded-lg transition-colors border-2 border-transparent">
-        {cards.map((card) => (
+        {cards.map((card, i) => (
           <Card
             key={card.id}
+            index={i}
             card={card}
             onEdit={() => setActiveCard(card)}
             onDelete={() => handleDeleteCard(card.id)}

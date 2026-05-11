@@ -1,4 +1,5 @@
 import { Pencil, Trash, Tag } from 'lucide-react'
+import { useSortable } from '@dnd-kit/react/sortable'
 import type { Card } from '../../types'
 
 const priorityColor = {
@@ -9,15 +10,28 @@ const priorityColor = {
 
 export default function Card({
   card,
+  index,
   onEdit,
   onDelete,
 }: {
   card: Card
+  index: number
   onEdit: () => void
   onDelete: () => void
 }) {
+  const { ref } = useSortable({
+    id: card.id,
+    index: index,
+    group: card.column_id,
+    type: 'item',
+    accept: ['item'],
+  })
+
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 cursor-move hover:shadow-md transition-shadow opacity-100">
+    <div
+      ref={ref}
+      className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 cursor-move hover:shadow-md transition-shadow opacity-100"
+    >
       <div className="flex items-start justify-between gap-2 mb-2">
         <h3 className="flex-1">{card.title}</h3>
 

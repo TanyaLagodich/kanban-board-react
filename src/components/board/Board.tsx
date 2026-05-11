@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { supabase } from '../../lib/supabase'
+import { DragDropProvider } from '@dnd-kit/react'
 import { useColumns } from '../../hooks/useColumns'
 import Column from './Column'
 import ColumnForm from '../forms/ColumnForm'
@@ -7,7 +10,57 @@ import { Search, Plus, Keyboard } from 'lucide-react'
 export default function Board() {
   const { columns, isLoading } = useColumns()
   const [showForm, setShowForm] = useState(false)
+  const queryClient = useQueryClient()
 
+  const onDragEnd = async (event: any) => {
+    if (event.canceled) return
+
+    const { source, target } = event.operation
+    if (!target) return
+
+    const cardId = source.id
+    const newColumnId = target.group ?? target.id
+    const oldColumnId = source.initialGroup
+
+    if (newColumnId === oldColumnId) {
+      const cards = queryClient.getQueryData<Card[]>(['cards', oldColumnId]) ?? []
+      const oldIndex = source.initialIndex
+      const newIndex = target.index
+
+      if (oldIndex === newIndex) return
+
+      const reordered = [...cards]
+      const [moved] = reordered.splice(oldIndex, 1)
+      reordered.splice(newIndex, 0, moved)
+
+      queryClient.setQueryData(['cards', oldColumnId], reordered)
+
+      await Promise.all(
+        reordered.map((card, index) =>
+          supabase
+            .from('cards')
+            .update({ position: index + 1 })
+            .eq('id', card.id)
+        )
+      )
+      return
+    }
+    const oldCards = queryClient.getQueryData<Card[]>(['cards', oldColumnId]) ?? []
+    const newCards = queryClient.getQueryData<Card[]>(['cards', newColumnId]) ?? []
+    const card = oldCards.find((c) => c.id === cardId)
+    if (!card) return
+
+    queryClient.setQueryData(
+      ['cards', oldColumnId],
+      oldCards.filter((c) => c.id !== cardId)
+    )
+    queryClient.setQueryData(
+      ['cards', newColumnId],
+      [...newCards, { ...card, column_id: newColumnId }]
+    )
+
+    await supabase.from('cards').update({ column_id: newColumnId }).eq('id', cardId)
+  }
   if (isLoading) return <p>Loading...</p>
 
   return (
@@ -49,11 +102,24 @@ export default function Board() {
       <div className="h-full px-6 py-6">
         {showForm && <ColumnForm onClose={() => setShowForm(false)} />}
 
-        <div className="flex gap-6 h-full">
-          {columns.map((column) => (
-            <Column key={column.id} column={column} />
-          ))}
-        </div>
+        <DragDropProvider
+          onDragEnd={onDragEnd}
+          onDragOver={(e: any) => {
+            const { source, target } = e.operation
+            if (!target) return
+            const sourceGroup = source.group
+            const targetGroup = target.group ?? target.id
+            if (sourceGroup !== targetGroup) {
+              e.preventDefault()
+            }
+          }}
+        >
+          <div className="flex gap-6 h-full">
+            {columns.map((column) => (
+              <Column key={column.id} column={column} />
+            ))}
+          </div>
+        </DragDropProvider>
       </div>
     </div>
   )
