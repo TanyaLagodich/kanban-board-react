@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { isSortable } from '@dnd-kit/dom/sortable'
+import type { DragEndEvent, DragOverEvent } from '@dnd-kit/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../../lib/supabase'
 import { DragDropProvider } from '@dnd-kit/react'
@@ -6,26 +8,27 @@ import { useColumns } from '../../hooks/useColumns'
 import Column from './Column'
 import ColumnForm from '../forms/ColumnForm'
 import { Search, Plus, Keyboard } from 'lucide-react'
+import type { Card } from '../../types'
 
 export default function Board() {
   const { columns, isLoading } = useColumns()
   const [showForm, setShowForm] = useState(false)
   const queryClient = useQueryClient()
 
-  const onDragEnd = async (event: any) => {
+  const onDragEnd = async (event: DragEndEvent) => {
     if (event.canceled) return
 
     const { source, target } = event.operation
-    if (!target) return
+    if (!target || !isSortable(source)) return
 
     const cardId = source.id
-    const newColumnId = target.group ?? target.id
+    const newColumnId = isSortable(target) ? (target.group ?? target.id) : target.id
     const oldColumnId = source.initialGroup
 
     if (newColumnId === oldColumnId) {
       const cards = queryClient.getQueryData<Card[]>(['cards', oldColumnId]) ?? []
-      const oldIndex = source.initialIndex
-      const newIndex = target.index
+      const oldIndex = source?.initialIndex
+      const newIndex = isSortable(target) ? target.index : cards.length
 
       if (oldIndex === newIndex) return
 
@@ -104,11 +107,11 @@ export default function Board() {
 
         <DragDropProvider
           onDragEnd={onDragEnd}
-          onDragOver={(e: any) => {
+          onDragOver={(e: DragOverEvent) => {
             const { source, target } = e.operation
-            if (!target) return
+            if (!target || !isSortable(source)) return
             const sourceGroup = source.group
-            const targetGroup = target.group ?? target.id
+            const targetGroup = isSortable(target) ? (target.group ?? target.id) : target.id
             if (sourceGroup !== targetGroup) {
               e.preventDefault()
             }
