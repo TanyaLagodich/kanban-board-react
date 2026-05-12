@@ -34,6 +34,7 @@ export default function Card({
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <h3 className="flex-1">{card.title}</h3>
+        {card.id.slice(0, 4)}
 
         <div className="flex items-center gap-1">
           <button

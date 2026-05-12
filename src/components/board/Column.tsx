@@ -46,6 +46,7 @@ export default function Column({ column }: Props) {
   }
   return (
     <div ref={ref} className="flex flex-col bg-gray-50 rounded-lg p-4 min-w-80 max-w-80">
+      {column.id.slice(0, 4)}
       {isEditing && (
         <Modal title="Edit Column" onClose={() => setIsEditing(false)}>
           <div className="mb-6">
